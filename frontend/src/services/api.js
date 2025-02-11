@@ -1,85 +1,86 @@
-// src/services/api.js
+import { Capacitor } from '@capacitor/core';
+import { Http } from '@capacitor/core';
 
-const BASE_URL = 'http://localhost:8000'; // Update this to match your FastAPI backend URL
+const BASE_URL = Capacitor.isNativePlatform() 
+  ? 'https://your-production-api.com' // Update with your production API
+  : 'http://localhost:8000';
 
 export const api = {
-    createRestaurant: async (restaurantData) => {
-        try {
-          const response = await fetch(`${BASE_URL}/restaurants/`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify(restaurantData),
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            throw new Error(errorData?.detail || 'Failed to create restaurant');
-          }
-          
-          return response.json();
-        } catch (error) {
-          console.error('Detailed error:', error);
-          throw error;
-        }
-      },
-
-addMenuItem: async (restaurantId, menuItemData) => {
+  createRestaurant: async (restaurantData) => {
     try {
-      const response = await fetch(`${BASE_URL}/restaurants/${restaurantId}/menu`, {
+      const response = await Http.request({
         method: 'POST',
-        credentials: 'include',
+        url: `${BASE_URL}/restaurants/`,
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify(menuItemData),
+        data: restaurantData
       });
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Handle validation errors
-        if (response.status === 422) {
-          const validationErrors = data.detail.map(error => 
-            `${error.loc[1]}: ${error.msg}`
-          ).join(', ');
-          throw new Error(`Validation error: ${validationErrors}`);
-        }
-        throw new Error(data.detail || 'Failed to add menu item');
+      if (response.status !== 200) {
+        const errorData = response.data;
+        throw new Error(errorData?.detail || 'Failed to create restaurant');
       }
       
-      return data;
+      return response.data;
+    } catch (error) {
+      console.error('Detailed error:', error);
+      throw error;
+    }
+  },
+
+  addMenuItem: async (restaurantId, menuItemData) => {
+    try {
+      const response = await Http.request({
+        method: 'POST',
+        url: `${BASE_URL}/restaurants/${restaurantId}/menu`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        data: menuItemData
+      });
+      
+      if (response.status === 422) {
+        const validationErrors = response.data.detail.map(error => 
+          `${error.loc[1]}: ${error.msg}`
+        ).join(', ');
+        throw new Error(`Validation error: ${validationErrors}`);
+      }
+      
+      if (response.status !== 200) {
+        throw new Error(response.data?.detail || 'Failed to add menu item');
+      }
+      
+      return response.data;
     } catch (error) {
       console.error('Error adding menu item:', error);
       throw error;
     }
   },
+
+  addAllergen: async (menuItemId, allergenData) => {
+    try {
+      const response = await Http.request({
+        method: 'POST',
+        url: `${BASE_URL}/menu/${menuItemId}/allergens`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        data: allergenData
+      });
       
-      addAllergen: async (menuItemId, allergenData) => {
-        try {
-          const response = await fetch(`${BASE_URL}/menu/${menuItemId}/allergens`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify(allergenData),
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => null);
-            throw new Error(errorData?.detail || 'Failed to add allergen');
-          }
-          
-          return response.json();
-        } catch (error) {
-          console.error('Detailed error:', error);
-          throw error;
-        }
-      },
+      if (response.status !== 200) {
+        const errorData = response.data;
+        throw new Error(errorData?.detail || 'Failed to add allergen');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Detailed error:', error);
+      throw error;
     }
+  }
+};
