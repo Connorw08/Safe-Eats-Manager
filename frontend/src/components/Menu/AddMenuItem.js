@@ -15,28 +15,40 @@ const AddMenuItem = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
+  
     try {
-      // Validate price is a number
-      const menuItemData = {
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price) // Ensure price is a number
-      };
+      // Validate inputs
+      if (!formData.name.trim()) {
+        throw new Error('Name is required');
+      }
       
-      console.log('Submitting menu item:', menuItemData); // Debug log
+      if (!formData.description.trim()) {
+        throw new Error('Description is required');
+      }
+  
+      const price = parseFloat(formData.price);
+      if (isNaN(price) || price < 0) {
+        throw new Error('Please enter a valid positive price');
+      }
+  
+      const menuItemData = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        price: price,
+        allergens: []  // Initialize empty allergens array
+      };
       
       const response = await api.addMenuItem(restaurantId, menuItemData);
       setSuccess('Menu item added successfully!');
-      setError('');
       setFormData({
         name: '',
         description: '',
         price: '',
       });
     } catch (error) {
-      const errorMessage = error.message || 'Error adding menu item';
-      setError(errorMessage);
-      setSuccess('');
+      setError(error.message || 'Error adding menu item');
       console.error('Error adding menu item:', error);
     }
   };

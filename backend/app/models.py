@@ -11,7 +11,6 @@ class MenuItem(BaseModel):
     name: str
     description: str
     price: float
-    restaurant_id: str
     allergens: List[str] = []
 
 class Allergen(BaseModel):

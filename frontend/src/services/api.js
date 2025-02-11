@@ -27,32 +27,37 @@ export const api = {
         }
       },
 
-      addMenuItem: async (restaurantId, menuItemData) => {
-        try {
-          console.log('Sending menu item data:', menuItemData); // Debug log
-          
-          const response = await fetch(`${BASE_URL}/restaurants/${restaurantId}/menu`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify(menuItemData),
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.log('Error response:', errorData); // Debug log
-            throw new Error(errorData.detail || 'Failed to add menu item');
-          }
-          
-          return response.json();
-        } catch (error) {
-          console.error('Detailed error:', error);
-          throw error;
+addMenuItem: async (restaurantId, menuItemData) => {
+    try {
+      const response = await fetch(`${BASE_URL}/restaurants/${restaurantId}/menu`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(menuItemData),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Handle validation errors
+        if (response.status === 422) {
+          const validationErrors = data.detail.map(error => 
+            `${error.loc[1]}: ${error.msg}`
+          ).join(', ');
+          throw new Error(`Validation error: ${validationErrors}`);
         }
-      },
+        throw new Error(data.detail || 'Failed to add menu item');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error adding menu item:', error);
+      throw error;
+    }
+  },
       
       addAllergen: async (menuItemId, allergenData) => {
         try {
