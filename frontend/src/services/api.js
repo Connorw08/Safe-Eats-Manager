@@ -5,82 +5,97 @@ const BASE_URL = Capacitor.isNativePlatform()
   ? 'https://your-production-api.com' // Update with your production API
   : 'http://localhost:8000';
 
-export const api = {
-  createRestaurant: async (restaurantData) => {
-    try {
-      const response = await CapacitorHttp.request({
-        method: 'POST',
-        url: `${BASE_URL}/restaurants/`,
+const makeRequest = async (config) => {
+  try {
+    let response;
+    
+    if (Capacitor.isNativePlatform()) {
+      response = await CapacitorHttp.request({
+        ...config,
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        data: restaurantData
+          'Accept': 'application/json',
+          ...config.headers
+        }
       });
+    } else {
+      // Use regular fetch for web platform
+      const fetchConfig = {
+        method: config.method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...config.headers
+        },
+        body: config.data ? JSON.stringify(config.data) : undefined
+      };
       
-      if (response.status !== 200) {
-        const errorData = response.data;
-        throw new Error(errorData?.detail || 'Failed to create restaurant');
-      }
+      const fetchResponse = await fetch(config.url, fetchConfig);
+      const data = await fetchResponse.json();
       
-      return response.data;
-    } catch (error) {
-      console.error('Detailed error:', error);
-      throw error;
+      response = {
+        status: fetchResponse.status,
+        data: data
+      };
     }
+
+    if (response.status !== 200) {
+      throw new Error(response.data?.detail || 'Request failed');
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+};
+
+export const api = {
+  createRestaurant: async (restaurantData) => {
+    return makeRequest({
+      method: 'POST',
+      url: `${BASE_URL}/restaurants/`,
+      data: restaurantData
+    });
+  },
+
+  getRestaurants: async () => {
+    return makeRequest({
+      method: 'GET',
+      url: `${BASE_URL}/restaurants`
+    });
   },
 
   addMenuItem: async (restaurantId, menuItemData) => {
-    try {
-      const response = await CapacitorHttp.request({
-        method: 'POST',
-        url: `${BASE_URL}/restaurants/${restaurantId}/menu`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        data: menuItemData
-      });
-      
-      if (response.status === 422) {
-        const validationErrors = response.data.detail.map(error => 
-          `${error.loc[1]}: ${error.msg}`
-        ).join(', ');
-        throw new Error(`Validation error: ${validationErrors}`);
-      }
-      
-      if (response.status !== 200) {
-        throw new Error(response.data?.detail || 'Failed to add menu item');
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error adding menu item:', error);
-      throw error;
-    }
+    return makeRequest({
+      method: 'POST',
+      url: `${BASE_URL}/restaurants/${restaurantId}/menu`,
+      data: menuItemData
+    });
   },
 
-  addAllergen: async (menuItemId, allergenData) => {
-    try {
-      const response = await CapacitorHttp.request({
-        method: 'POST',
-        url: `${BASE_URL}/menu/${menuItemId}/allergens`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        data: allergenData
-      });
-      
-      if (response.status !== 200) {
-        const errorData = response.data;
-        throw new Error(errorData?.detail || 'Failed to add allergen');
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Detailed error:', error);
-      throw error;
+  getMenuItems: async (restaurantId, filters = {}) => {
+    const { dietaryCategory, allergenFree } = filters;
+    let url = `${BASE_URL}/restaurants/${restaurantId}/menu`;
+    
+    const queryParams = new URLSearchParams();
+    if (dietaryCategory) {
+      queryParams.append('dietary_category', dietaryCategory);
     }
+    if (allergenFree?.length > 0) {
+      allergenFree.forEach(allergen => {
+        queryParams.append('allergen_free', allergen);
+      });
+    }
+    
+    const queryString = queryParams.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+
+    return makeRequest({
+      method: 'GET',
+      url
+    });
   }
 };

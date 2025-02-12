@@ -1,18 +1,17 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-class Restaurant(BaseModel):
+class Allergen(BaseModel):
+    id: str
     name: str
-    address: str
-    phone: str
-    cuisine_type: str
 
 class MenuItem(BaseModel):
     name: str
     description: str
     price: float
     allergens: List[str] = []
+    dietaryCategories: List[str] = []
 
-class Allergen(BaseModel):
+class Restaurant(BaseModel):
     name: str
     description: Optional[str] = None

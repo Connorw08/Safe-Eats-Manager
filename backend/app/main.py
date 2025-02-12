@@ -9,6 +9,9 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",    # React app
     "http://localhost:8000",    # FastAPI backend
+    "http://localhost:8100",    # Capacitor development
+    "capacitor://localhost",    # Capacitor native
+    "*"                         # Allow all origins during development
 ]
 
 app.add_middleware(
