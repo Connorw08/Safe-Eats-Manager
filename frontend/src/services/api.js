@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { Http } from '@capacitor/core';
+import { CapacitorHttp } from '@capacitor/core';
 
 const BASE_URL = Capacitor.isNativePlatform() 
   ? 'https://your-production-api.com' // Update with your production API
@@ -8,7 +8,7 @@ const BASE_URL = Capacitor.isNativePlatform()
 export const api = {
   createRestaurant: async (restaurantData) => {
     try {
-      const response = await Http.request({
+      const response = await CapacitorHttp.request({
         method: 'POST',
         url: `${BASE_URL}/restaurants/`,
         headers: {
@@ -32,7 +32,7 @@ export const api = {
 
   addMenuItem: async (restaurantId, menuItemData) => {
     try {
-      const response = await Http.request({
+      const response = await CapacitorHttp.request({
         method: 'POST',
         url: `${BASE_URL}/restaurants/${restaurantId}/menu`,
         headers: {
@@ -62,7 +62,7 @@ export const api = {
 
   addAllergen: async (menuItemId, allergenData) => {
     try {
-      const response = await Http.request({
+      const response = await CapacitorHttp.request({
         method: 'POST',
         url: `${BASE_URL}/menu/${menuItemId}/allergens`,
         headers: {
